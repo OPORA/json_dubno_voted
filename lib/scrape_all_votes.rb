@@ -6,16 +6,17 @@ require 'date'
 class GetAllVotes
    def initialize
      @all_file = get_all_file()
-     #$all_mp =  GetMp.new
+     $all_mp =  GetMp.new
    end
    def get_all_file
      hash = []
-     uri = "https://opendata.drohobych-rada.gov.ua/api/3/action/package_show?id=d0580cfd-39ee-41d5-ae59-b25dd9c64439"
+     uri = "https://ckan.dubno-adm.rv.ua/api/3/action/package_search?q=rezul-tati-rolosuvan&rows=100"
      json = open(uri).read
      hash_json = JSON.parse(json)
-     hash_json["result"][0]["resources"].each do |f|
-       p f["url"]
-       hash << { path: f["url"], last_modified: f["last_modified"]}
+     hash_json["result"]["results"].each do |f|
+       f["resources"].each do |r|
+         hash << { path: r["url"], last_modified: r["last_modified"]}
+       end
      end
      return hash
    end
@@ -29,51 +30,48 @@ class GetAllVotes
     end
   end
   def read_file(file)
-
+     i = 1
     json = open(file).read
-
+     p file
     my_hash = JSON.parse(json)
-    p my_hash["sessionDate"]
-    date_caden = Date.strptime(my_hash["sessionDate"].strip,'%d.%m.%y')
-    rada_id = 6
+    my_hash["PD"].each do |v|
+      v["GLList"].each do |vote|
+        date_caden = Date.strptime(vote["GLTime"].strip,'%d.%m.%Y')
+        if date_caden == "1899-12-30"
+          p file
+          raise "I am betman"
+        end
+            date_vote = DateTime.strptime(vote["GLTime"].strip, '%d.%m.%Y %H:%M:%S')
+        name = vote["GLText"]
+        rada_id = 10
 
-    my_hash["voting"].each_with_index  do |v, i|
-      next if v["namedVoting"].empty?
-      name = v["voteName"].strip
-      number = i + 1
-       p v["voteTimestamp"]
-      date_vote =  DateTime.strptime(v["voteTimestamp"].strip, '%d.%m.%y %H:%M:%S')
-      event = VoteEvent.first(name: name, date_vote: date_vote, number: number, date_caden: date_caden, rada_id: rada_id)
-      if event.nil?
-        events = VoteEvent.new(name: name, date_vote: date_vote, number: number, date_caden: date_caden, rada_id: rada_id)
-        events.date_created = Date.today
-        events.save
-      else
-        events = event
-        events.votes.destroy!
-      end
-      size = v["namedVoting"].size/2.to_f
-      p size
-      ages =[]
-      v["namedVoting"].each do |r|
-        v = r.to_a[0]
-        vote = events.votes.new
-        vote.voter_id = v.first #$all_mp.serch_mp(v.first)
-        vote.result =  short_voted_result(v.last)
-        vote.save
+        if vote["RESULT"] ==  " РІШЕННЯ ПРИЙНЯТО "
+          option = "Прийнято"
+        else
+          option= "Не прийнято"
+        end
 
-        if vote.result == "aye"
-          ages << 1
+        event = VoteEvent.first(name: name, date_vote: date_vote, number: i, date_caden: date_caden, rada_id: rada_id, option: option)
+
+        if event.nil?
+              events = VoteEvent.new(name: name, date_vote: date_vote, number: i, date_caden: date_caden, rada_id: rada_id, option: option)
+              events.date_created = Date.today
+              events.save
+        else
+              events = event
+              events.votes.destroy!
+        end
+        i = i + 1
+        vote["DPList"].each do |dep_vote|
+          vote = events.votes.new
+          vote.voter_id = $all_mp.serch_mp(dep_vote["DPName"])
+          vote.result =  short_voted_result(dep_vote["DPGolos"])
+          vote.save
         end
       end
-      ages_sum = ages.size
-      if ages_sum > size
-        result = "Прийнято"
-      else
-        result = "Не прийнято"
-      end
-      events.update(option: result)
     end
+
+
 
   end
   def short_voted_result(result)
