@@ -10,13 +10,12 @@ class GetAllVotes
    end
    def get_all_file
      hash = []
-     uri = "https://ckan.dubno-adm.rv.ua/api/3/action/package_search?q=rezul-tati-rolosuvan&rows=100"
+     uri = "https://ckan.dubno-adm.rv.ua/api/3/action/package_show?id=rezul-tati-rolosuvannya-u-2019-rotsi"
      json = open(uri).read
      hash_json = JSON.parse(json)
-     hash_json["result"]["results"].each do |f|
-       f["resources"].each do |r|
+     hash_json["result"]["resources"].each do |r|
+
          hash << { path: r["url"], last_modified: r["last_modified"]}
-       end
      end
      return hash
    end
@@ -32,19 +31,16 @@ class GetAllVotes
   def read_file(file)
      i = 1
     json = open(file).read
-     p file
+     # p file
     my_hash = JSON.parse(json)
     my_hash["PD"].each do |v|
       v["GLList"].each do |vote|
+        # p vote
+        # p vote["GLTime"]
         date_caden = Date.strptime(vote["GLTime"].strip,'%d.%m.%Y')
-        if date_caden == "1899-12-30"
-          p file
-          raise "I am betman"
-        end
-            date_vote = DateTime.strptime(vote["GLTime"].strip, '%d.%m.%Y %H:%M:%S')
+               date_vote = DateTime.strptime(vote["GLTime"].strip, '%d.%m.%Y %H:%M:%S')
         name = vote["GLText"]
         rada_id = 10
-
         if vote["RESULT"] ==  " РІШЕННЯ ПРИЙНЯТО "
           option = "Прийнято"
         else
@@ -62,6 +58,7 @@ class GetAllVotes
               events.votes.destroy!
         end
         i = i + 1
+        # p file
         vote["DPList"].each do |dep_vote|
           vote = events.votes.new
           vote.voter_id = $all_mp.serch_mp(dep_vote["DPName"])

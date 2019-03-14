@@ -5,7 +5,7 @@ class GetMp
     @data_hash = JSON.load(open('http://dubnomp.oporaua.org/'))
   end
   def serch_mp(full_name)
-    p full_name
+    # p full_name
     if full_name =="Іванова Марія Петрівна"
       return 35
     elsif  full_name == "Момотюк Юрій Володимирович"
