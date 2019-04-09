@@ -10,7 +10,7 @@ class GetAllVotes
    end
    def get_all_file
      hash = []
-     uri = "https://ckan.dubno-adm.rv.ua/api/3/action/package_show?id=rezul-tati-rolosuvannya-u-2019-rotsi"
+     uri = "https://ckan.dubno-adm.rv.ua/api/3/action/package_show?id=rezul-tati-rolosuvannya-u-2018-rotsi"
      json = open(uri).read
      hash_json = JSON.parse(json)
      hash_json["result"]["resources"].each do |r|
