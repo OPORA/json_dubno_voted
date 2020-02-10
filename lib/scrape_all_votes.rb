@@ -40,7 +40,7 @@ class GetAllVotes
         # p vote["GLTime"]
         date_caden = Date.strptime(vote["GLTime"].strip,'%d.%m.%Y')
                date_vote = DateTime.strptime(vote["GLTime"].strip, '%d.%m.%Y %H:%M:%S')
-        name = vote["GLText"]
+        name = vote["GL_Text"]
         rada_id = 10
         if vote["RESULT"].strip ==  "РІШЕННЯ ПРИЙНЯТО"
           option = "Прийнято"
